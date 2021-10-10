@@ -1,89 +1,75 @@
 const express = require('express')
 const cors = require('cors')
 const app = express()
+const pool = require('./database/db_connection')
 const PORT = process.env.PORT || 3001
+
+//  Middlewares
 app.use(cors())
 app.use(express.json())
+
+//  Routes
+
+//  Create a todo
+
+app.post('/todos', async (req, res) => {
+  try {
+    const { description } = req.body
+    const newTodo = await pool.query('INSERT INTO todo(description) VALUES($1) RETURNING *', [description])
+    res.json(newTodo.rows[0])
+  } catch (error) {
+    console.error(error.message)
+  }
+})
+
+//  Get all todos
+
+app.get('/todos', async (req, res) => {
+  try {
+    const allTodos = await pool.query('SELECT * FROM todo')
+    res.json(allTodos.rows)
+  } catch (error) {
+    console.error(error.message)
+  }
+})
+
+//  Get a todo
+
+app.get('/todos/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const todo = await pool.query('SELECT * FROM todo WHERE id = $1', [id])
+    res.json(todo.rows)
+  } catch (error) {
+    console.error(error.message)
+  }
+})
+
+//  Update a todo
+
+app.put('/todos/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { description } = req.body
+    const updateTodo = await pool.query('UPDATE todo SET description = $1 WHERE id = $2', [description, id])
+    res.json('Todo was updated')
+  } catch (error) {
+    console.error(error.message)
+  }
+})
+
+//  Delete a todo
+
+app.delete('/todos/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const deleteTodo = await pool.query('DELETE FROM todo WHERE id = $1', [id])
+    res.json('Todo was deleted')
+  } catch (error) {
+    console.error(error.message)
+  }
+})
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en el puerto ${PORT}`)
 })
-
-/* Midudev
-let notes = [
-  {
-    id: 1,
-    content: 'Me tengo que suscribir a @midudev en Youtube',
-    date: '2019-05-30T17:30:31.098Z',
-    important: true
-  },
-  {
-    id: 2,
-    content: 'Tengo que estudiar las clases del FullStack Bootcamp',
-    date: '2019-05-30T17:39:34.091Z',
-    important: false
-  },
-  {
-    id: 3,
-    content: 'Repasar los retos de JS de midudev',
-    date: '2019-05-30T17:20:14.298Z',
-    important: true
-  }
-]
-
-const express = require('express')
-const cors = require('cors')
-const app = express()
-app.use(cors())
-app.use(express.json())
-
-app.get('/', (request, response) => {
-  response.send('<h1>Hello World</h1>')
-})
-
-// GET
-app.get('/api/notes', (request, response) => {
-  response.json(notes)
-})
-// GET
-app.get('/api/notes/:id', (request, response) => {
-  const id = Number(request.params.id)
-  const note = notes.find(note => note.id === id)
-  if (note) {
-    response.json(note)
-  } else {
-    response.status(404).end()
-  }
-})
-// DELETE
-app.delete('/api/notes/:id', (request, response) => {
-  const id = Number(request.params.id)
-  notes = notes.filter(note => note.id !== id)
-  response.status(204).end()
-})
-// POST
-app.post('/api/notes', (request, response) => {
-  const note = request.body
-  const ids = notes.map(note => note.id)
-  const maxId = Math.max(...ids)
-  const newNote = {
-    id: maxId + 1,
-    content: note.content,
-    important: typeof note.important !== 'undefined' ? note.important : false,
-    date: new Date().toISOString()
-  }
-  notes = [...notes, newNote]
-  response.status(201).json(newNote)
-})
-
-app.use((request, response) => {
-  response.status(404).json({
-    error: 'Not found'
-  })
-})
-
-const PORT = process.env.PORT || 3001
-app.listen(PORT, () => {
-  console.log('Server running on port', PORT)
-})
-*/
